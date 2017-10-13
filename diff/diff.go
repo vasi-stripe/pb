@@ -45,34 +45,28 @@ func (r *Report) Add(ch Change) {
 }
 
 func Diff(previous, current *plugin.CodeGeneratorRequest) (*Report, error) {
-	curr := map[string]*descriptor.FileDescriptorProto{}
-	report := &Report{Changes: []Change{}}
-
-	for _, protoFile := range current.ProtoFile {
-		curr[*protoFile.Name] = protoFile
-	}
-
-	for _, protoFile := range previous.ProtoFile {
-		next, exists := curr[*protoFile.Name]
-		if !exists {
-			report.Add(ProblemRemovedFile{*protoFile.Name})
-			continue
-		}
-		diffFile(report, protoFile, next)
-	}
-
-	var err error
-	if len(report.Changes) > 0 {
-		err = fmt.Errorf("found %d problems: %s", len(report.Changes), report.Changes)
-	}
-
-	return report, err
+	return diffFiles(previous.ProtoFile, current.ProtoFile)
 }
 
 func DiffSet(previous, current *descriptor.FileDescriptorSet) (*Report, error) {
+	return diffFiles(previous.File, current.File)
+}
+
+func diffFiles(previous, current []*descriptor.FileDescriptorProto) (*Report, error) {
 	report := &Report{Changes: []Change{}}
-	// TODO: Figure out how we want to deal with name changes
-	diffFile(report, previous.File[0], current.File[0])
+
+	prev_by_package := groupByPackage(previous)
+	curr_by_package := groupByPackage(current)
+
+	for package_name, files := range prev_by_package {
+		next, exists := curr_by_package[package_name]
+		if !exists {
+			report.Add(ProblemRemovedPackage{package_name})
+			continue
+		}
+		diffPackage(report, files, next)
+	}
+
 	var err error
 	if len(report.Changes) > 0 {
 		err = fmt.Errorf("found %d problems: %s", len(report.Changes), report.Changes)
@@ -80,59 +74,76 @@ func DiffSet(previous, current *descriptor.FileDescriptorSet) (*Report, error) {
 	return report, err
 }
 
-func diffFile(report *Report, previous, current *descriptor.FileDescriptorProto) {
-	{ // Name and package
-		if !cmp.Equal(previous.Package, current.Package) {
-			report.Add(ProblemChangedPackage{
-				File:   current,
-				OldPkg: *previous.Package,
-				NewPkg: *current.Package,
-			})
+func groupByPackage(files []*descriptor.FileDescriptorProto) map[string][]*descriptor.FileDescriptorProto {
+	by_package := map[string][]*descriptor.FileDescriptorProto{}
+
+	for _, file := range files {
+		package_files, exists := by_package[*file.Package]
+		if exists {
+			by_package[*file.Package] = append(package_files, file)
+		} else {
+			by_package[*file.Package] = []*descriptor.FileDescriptorProto{file}
 		}
 	}
 
+	return by_package
+}
+
+func diffPackage(report *Report, previous, current []*descriptor.FileDescriptorProto) {
 	{ // EnumType
 		curr := map[string]*descriptor.EnumDescriptorProto{}
-		for _, enum := range current.EnumType {
-			curr[*enum.Name] = enum
-		}
-		for _, enum := range previous.EnumType {
-			next, exists := curr[*enum.Name]
-			if !exists {
-				report.Add(ProblemRemovedEnum{*enum.Name})
-				continue
+		for _, file := range current {
+			for _, enum := range file.EnumType {
+				curr[*enum.Name] = enum
 			}
-			diffEnum(report, enum, next)
+		}
+		for _, file := range previous {
+			for _, enum := range file.EnumType {
+				next, exists := curr[*enum.Name]
+				if !exists {
+					report.Add(ProblemRemovedEnum{*enum.Name})
+					continue
+				}
+				diffEnum(report, enum, next)
+			}
 		}
 	}
 
 	{ // Service
 		curr := map[string]*descriptor.ServiceDescriptorProto{}
-		for _, srv := range current.Service {
-			curr[*srv.Name] = srv
-		}
-		for _, srv := range previous.Service {
-			next, exists := curr[*srv.Name]
-			if !exists {
-				report.Add(ProblemRemovedService{*srv.Name})
-				continue
+		for _, file := range current {
+			for _, srv := range file.Service {
+				curr[*srv.Name] = srv
 			}
-			diffService(report, srv, next)
+		}
+		for _, file := range previous {
+			for _, srv := range file.Service {
+				next, exists := curr[*srv.Name]
+				if !exists {
+					report.Add(ProblemRemovedService{*srv.Name})
+					continue
+				}
+				diffService(report, srv, next)
+			}
 		}
 	}
 
 	{ // MessageType
 		curr := map[string]*descriptor.DescriptorProto{}
-		for _, msg := range current.MessageType {
-			curr[*msg.Name] = msg
-		}
-		for _, msg := range previous.MessageType {
-			next, exists := curr[*msg.Name]
-			if !exists {
-				report.Add(ProblemRemovedMessage{*msg.Name})
-				continue
+		for _, file := range current {
+			for _, msg := range file.MessageType {
+				curr[*msg.Name] = msg
 			}
-			diffMsg(report, msg, next)
+		}
+		for _, file := range previous {
+			for _, msg := range file.MessageType {
+				next, exists := curr[*msg.Name]
+				if !exists {
+					report.Add(ProblemRemovedMessage{*msg.Name})
+					continue
+				}
+				diffMsg(report, msg, next)
+			}
 		}
 	}
 }

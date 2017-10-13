@@ -46,7 +46,7 @@ func TestDiffing(t *testing.T) {
 		"changed_field_label":      "changed label for field 'name' on message 'HelloRequest': LABEL_OPTIONAL -> LABEL_REPEATED",
 		"changed_field_name":       "changed name for field #1 on message 'HelloRequest': foo -> bar",
 		"changed_field_type":       "changed types for field 'name' on message 'HelloRequest': TYPE_STRING -> TYPE_BOOL",
-		"changed_package":          "changed package name: foo -> bar",
+		"changed_package":          "removed package 'foo'",
 		"changed_service_input":    "changed input type for method 'Invoke' on service 'Foo': .helloworld.FooRequest -> .helloworld.BarRequest",
 		"changed_service_output":   "changed output type for method 'Invoke' on service 'Foo': .helloworld.FooResponse -> .helloworld.BarResponse",
 		"removed_enum":             "removed enum 'FOO'",

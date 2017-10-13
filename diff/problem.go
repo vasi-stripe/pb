@@ -110,12 +110,12 @@ func (p ProblemRemovedMessage) String() string {
 	return fmt.Sprintf("removed message '%s'", p.Message)
 }
 
-type ProblemRemovedFile struct {
-	File string
+type ProblemRemovedPackage struct {
+	Package string
 }
 
-func (p ProblemRemovedFile) String() string {
-	return fmt.Sprintf("removed file '%s'", p.File)
+func (p ProblemRemovedPackage) String() string {
+	return fmt.Sprintf("removed package '%s'", p.Package)
 }
 
 type ProblemRemovedService struct {
@@ -137,14 +137,4 @@ type ProblemChangedServiceStreaming struct {
 func (p ProblemChangedServiceStreaming) String() string {
 	return fmt.Sprintf("changed %s streaming for method '%s' on service '%s': %t -> %t",
 		p.Side, p.Name, p.Service, p.OldStream != nil, p.NewStream != nil)
-}
-
-type ProblemChangedPackage struct {
-	File   *descriptor.FileDescriptorProto
-	OldPkg string
-	NewPkg string
-}
-
-func (p ProblemChangedPackage) String() string {
-	return fmt.Sprintf("changed package name: %s -> %s", p.OldPkg, p.NewPkg)
 }
