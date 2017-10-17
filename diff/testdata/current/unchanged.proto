@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package helloworld;
+
+import "testdata/current/unchanged_import.proto";
+
+message HelloRequest {
+  string str = 1;
+  int32 int = 2;
+  float num = 3;
+  bytes binary = 4;
+  Type type = 5;
+
+  enum Type {
+    FOO = 0;
+    BAR = 1;
+  }
+
+  message Element {
+    string str = 1;
+  }
+
+  repeated Element elements = 6;
+  Foo imported = 7;
+}
+
+message HelloResponse {
+  bool ok = 1;
+}
+
+service HelloWorld {
+  rpc Call (HelloRequest) returns (HelloResponse) {}
+}

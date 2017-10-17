@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -14,17 +15,23 @@ import (
 // Given a directory name and a .proto file, generate a FileDescriptorSet.
 //
 // Requires protoc to be installed.
-func generateFileSet(t *testing.T, prefix, name string) descriptor.FileDescriptorSet {
+func generateFileSet(t *testing.T, prefix string, names ...string) descriptor.FileDescriptorSet {
 	var fds descriptor.FileDescriptorSet
 	protoDir := filepath.Join("testdata", prefix)
-	protoFile := filepath.Join(protoDir, name+".proto")
+
+	protoFiles := []string{}
+	for _, name := range names {
+		protoFiles = append(protoFiles, filepath.Join(protoDir, name+".proto"))
+	}
+
 	fdsDir := filepath.Join("testdata", prefix+"_fds")
-	fdsFile := filepath.Join(fdsDir, name+".fds")
+	fdsFile := filepath.Join(fdsDir, strings.Join(names, "_")+".fds")
 	if err := os.MkdirAll(fdsDir, 0755); err != nil {
 		t.Fatal(err)
 	}
 	// Run protoc
-	cmd := exec.Command("protoc", "-o", fdsFile, protoFile)
+	cmdArgs := append([]string{"-o", fdsFile}, protoFiles...)
+	cmd := exec.Command("protoc", cmdArgs...)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("protoc failed: %s %s", err, out)
 	}
@@ -77,4 +84,16 @@ func TestDiffing(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("unchanged", func(t *testing.T) {
+		files := generateFileSet(t, "current", "unchanged", "unchanged_import")
+		reordered := generateFileSet(t, "current", "unchanged_import", "unchanged")
+		report, err := DiffSet(&files, &reordered)
+		if err != nil {
+			t.Fatal("unexpected error %s", err)
+		}
+		if len(report.Changes) != 0 {
+			t.Fatal("%d unexpected problem reports", len(report.Changes))
+		}
+	})
 }
