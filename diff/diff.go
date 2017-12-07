@@ -158,7 +158,9 @@ func diffMsg(report *Report, previous, current *descriptor.DescriptorProto) {
 	for _, field := range previous.Field {
 		next, exists := curr[*field.Number]
 		if !exists {
-			report.Add(ProblemRemovedField{*current.Name, *field.Name})
+			if !hasReserved(current, field) {
+				report.Add(ProblemRemovedField{*current.Name, *field.Name})
+			}
 			continue
 		}
 		if !cmp.Equal(field.Name, next.Name) {
@@ -187,6 +189,27 @@ func diffMsg(report *Report, previous, current *descriptor.DescriptorProto) {
 		}
 
 	}
+}
+
+func hasReserved(message *descriptor.DescriptorProto, field *descriptor.FieldDescriptorProto) bool {
+	reserved_name := false
+	reserved_number := false
+
+	for _, name := range message.ReservedName {
+		if cmp.Equal(name, *field.Name) {
+			reserved_name = true
+			break
+		}
+	}
+
+	for _, rrange := range message.ReservedRange {
+		if *field.Number >= *rrange.Start && *field.Number <= *rrange.End {
+			reserved_number = true
+			break
+		}
+	}
+
+	return reserved_name && reserved_number
 }
 
 func diffEnum(report *Report, previous, current *descriptor.EnumDescriptorProto) {

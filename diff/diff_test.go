@@ -96,4 +96,16 @@ func TestDiffing(t *testing.T) {
 			t.Fatal("%d unexpected problem reports", len(report.Changes))
 		}
 	})
+
+	t.Run("field removal with name & number reserved", func(t *testing.T) {
+		current := generateFileSet(t, "current", "removed_field_but_reserved")
+		previous := generateFileSet(t, "previous", "removed_field_but_reserved")
+		report, err := DiffSet(&previous, &current)
+		if err != nil {
+			t.Fatal("unexpected error %s", err)
+		}
+		if len(report.Changes) != 0 {
+			t.Fatal("%d unexpected problem reports", len(report.Changes))
+		}
+	})
 }
