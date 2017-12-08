@@ -62,6 +62,8 @@ func TestDiffing(t *testing.T) {
 		"removed_message":          "removed message 'HelloRequest'",
 		"removed_service":          "removed service 'Foo'",
 		"removed_service_method":   "removed method 'Bar' from service 'Foo'",
+		"unreserved_name":          "un-reserved field name 'name' from message 'HelloRequest'",
+		"unreserved_number":        "un-reserved field number(s) in range 1 to 3 from message 'HelloRequest'",
 	}
 	for name, problem := range files {
 		t.Run(name, func(t *testing.T) {
