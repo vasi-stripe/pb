@@ -138,3 +138,26 @@ func (p ProblemChangedServiceStreaming) String() string {
 	return fmt.Sprintf("changed %s streaming for method '%s' on service '%s': %t -> %t",
 		p.Side, p.Name, p.Service, p.OldStream != nil, p.NewStream != nil)
 }
+
+type ProblemUnreservedFieldName struct {
+	Message string
+	Name    string
+}
+
+func (p ProblemUnreservedFieldName) String() string {
+	return fmt.Sprintf("un-reserved field name '%s' from message '%s'", p.Name, p.Message)
+}
+
+type ProblemUnreservedFieldNumber struct {
+	Message string
+	Start   int32
+	End     int32
+}
+
+func (p ProblemUnreservedFieldNumber) String() string {
+	if p.End-p.Start > 1 {
+		return fmt.Sprintf("un-reserved field number(s) in range %d to %d from message '%s'", p.Start, p.End-1, p.Message)
+	} else {
+		return fmt.Sprintf("un-reserved field number %d from message '%s'", p.Start, p.Message)
+	}
+}

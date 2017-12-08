@@ -62,6 +62,8 @@ func TestDiffing(t *testing.T) {
 		"removed_message":          "removed message 'HelloRequest'",
 		"removed_service":          "removed service 'Foo'",
 		"removed_service_method":   "removed method 'Bar' from service 'Foo'",
+		"unreserved_name":          "un-reserved field name 'name' from message 'HelloRequest'",
+		"unreserved_number":        "un-reserved field number(s) in range 1 to 3 from message 'HelloRequest'",
 	}
 	for name, problem := range files {
 		t.Run(name, func(t *testing.T) {
@@ -89,6 +91,18 @@ func TestDiffing(t *testing.T) {
 		files := generateFileSet(t, "current", "unchanged", "unchanged_import")
 		reordered := generateFileSet(t, "current", "unchanged_import", "unchanged")
 		report, err := DiffSet(&files, &reordered)
+		if err != nil {
+			t.Fatal("unexpected error %s", err)
+		}
+		if len(report.Changes) != 0 {
+			t.Fatal("%d unexpected problem reports", len(report.Changes))
+		}
+	})
+
+	t.Run("field removal with name & number reserved", func(t *testing.T) {
+		current := generateFileSet(t, "current", "removed_field_but_reserved")
+		previous := generateFileSet(t, "previous", "removed_field_but_reserved")
+		report, err := DiffSet(&previous, &current)
 		if err != nil {
 			t.Fatal("unexpected error %s", err)
 		}

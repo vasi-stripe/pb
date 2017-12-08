@@ -149,6 +149,12 @@ func diffPackage(report *Report, previous, current []*descriptor.FileDescriptorP
 }
 
 func diffMsg(report *Report, previous, current *descriptor.DescriptorProto) {
+	diffFields(report, previous, current)
+	diffReservedNames(report, previous, current)
+	diffReservedNumbers(report, previous, current)
+}
+
+func diffFields(report *Report, previous, current *descriptor.DescriptorProto) {
 	curr := map[int32]*descriptor.FieldDescriptorProto{}
 
 	for _, field := range current.Field {
@@ -158,7 +164,9 @@ func diffMsg(report *Report, previous, current *descriptor.DescriptorProto) {
 	for _, field := range previous.Field {
 		next, exists := curr[*field.Number]
 		if !exists {
-			report.Add(ProblemRemovedField{*current.Name, *field.Name})
+			if !hasReserved(current, field) {
+				report.Add(ProblemRemovedField{*current.Name, *field.Name})
+			}
 			continue
 		}
 		if !cmp.Equal(field.Name, next.Name) {
@@ -187,6 +195,72 @@ func diffMsg(report *Report, previous, current *descriptor.DescriptorProto) {
 		}
 
 	}
+}
+
+func diffReservedNames(report *Report, previous, current *descriptor.DescriptorProto) {
+	for _, prev_name := range previous.ReservedName {
+		found := false
+
+		for _, curr_name := range current.ReservedName {
+			if cmp.Equal(prev_name, curr_name) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			report.Add(ProblemUnreservedFieldName{
+				Message: *current.Name,
+				Name:    prev_name,
+			})
+		}
+	}
+}
+
+// This algorithm is currently pretty dumb and will have false positives, when
+// a reserved range is now represented in parts but those parts are complete.
+// That seems ok since the false positives can always be re-written to pass
+// (and why were you splitting your reserved range anyway?)
+func diffReservedNumbers(report *Report, previous, current *descriptor.DescriptorProto) {
+	for _, prev_range := range previous.ReservedRange {
+		found := false
+
+		for _, curr_range := range current.ReservedRange {
+			if *prev_range.Start >= *curr_range.Start && *prev_range.End <= *curr_range.End {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			report.Add(ProblemUnreservedFieldNumber{
+				Message: *current.Name,
+				Start:   *prev_range.Start,
+				End:     *prev_range.End,
+			})
+		}
+	}
+}
+
+func hasReserved(message *descriptor.DescriptorProto, field *descriptor.FieldDescriptorProto) bool {
+	reserved_name := false
+	reserved_number := false
+
+	for _, name := range message.ReservedName {
+		if cmp.Equal(name, *field.Name) {
+			reserved_name = true
+			break
+		}
+	}
+
+	for _, rrange := range message.ReservedRange {
+		if *field.Number >= *rrange.Start && *field.Number <= *rrange.End {
+			reserved_number = true
+			break
+		}
+	}
+
+	return reserved_name && reserved_number
 }
 
 func diffEnum(report *Report, previous, current *descriptor.EnumDescriptorProto) {
