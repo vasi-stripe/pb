@@ -8,11 +8,12 @@
 
 ### Usage
 
-    protoc --lint_out=. helloworld.proto 
+    protoc --lint_out=. helloworld.proto
 
 ## protodiff
 
-Verify protocol buffer changes are backwards compatible.
+Verify protocol buffer changes are backwards compatible between both binary and
+JSON serialized representations.
 
 ### Installation
 

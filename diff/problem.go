@@ -94,6 +94,17 @@ func (p ProblemChangeEnumValue) String() string {
 	return fmt.Sprintf("changed value '%s' on enum '%s': %d -> %d", p.Name, p.Enum, p.OldValue, p.NewValue)
 }
 
+type ProblemChangeEnumName struct {
+	Enum    string
+	Number  int32
+	OldName string
+	NewName string
+}
+
+func (p ProblemChangeEnumName) String() string {
+	return fmt.Sprintf("changed name of field #%d on enum '%s': %s -> %s", p.Number, p.Enum, p.OldName, p.NewName)
+}
+
 type ProblemRemovedEnum struct {
 	Enum string
 }
