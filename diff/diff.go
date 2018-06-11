@@ -291,6 +291,21 @@ func diffEnum(report *Report, previous, current *descriptor.EnumDescriptorProto)
 			}
 		}
 	}
+
+	for _, name := range previous.Value {
+		_, exists := byname[*name.Name]
+		if !exists {
+			next, renamed := byvalue[*name.Number]
+			if renamed {
+				report.Add(ProblemChangeEnumName{
+					Enum:    *previous.Name,
+					Number:  *name.Number,
+					OldName: *name.Name,
+					NewName: *next.Name,
+				})
+			}
+		}
+	}
 }
 
 // Golang go-cmp
