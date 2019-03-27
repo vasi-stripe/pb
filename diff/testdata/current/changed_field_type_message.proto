@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package helloworld;
+
+import "google/protobuf/wrappers.proto";
+
+message HelloRequest {
+  google.protobuf.Int64Value name = 1;
+}

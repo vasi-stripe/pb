@@ -184,6 +184,15 @@ func diffFields(report *Report, previous, current *descriptor.DescriptorProto) {
 				OldType: field.Type,
 				NewType: next.Type,
 			})
+		} else if field.TypeName != nil && next.TypeName != nil && !cmp.Equal(field.TypeName, next.TypeName) {
+			// TypeName could theoretically be non-equal but still resolve to the same thing, but
+			// protoc is documented to only generate fully-qualified type names.
+			report.Add(ProblemChangedFieldComplexType{
+				Message: *current.Name,
+				Field:   *field.Name,
+				OldType: *field.TypeName,
+				NewType: *next.TypeName,
+			})
 		}
 		if !cmp.Equal(field.Label, next.Label) {
 			report.Add(ProblemChangedFieldLabel{

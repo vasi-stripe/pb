@@ -19,6 +19,20 @@ func (p ProblemChangedFieldType) String() string {
 		p.Field, p.Message, p.OldType, p.NewType)
 }
 
+// ProblemChangedFieldComplexType occurs when a complex field (message or enum) changes in type
+type ProblemChangedFieldComplexType struct {
+	Message string
+	Number  int32
+	Field   string
+	OldType string
+	NewType string
+}
+
+func (p ProblemChangedFieldComplexType) String() string {
+	return fmt.Sprintf("changed types for field '%s' on message '%s': %s -> %s",
+		p.Field, p.Message, p.OldType, p.NewType)
+}
+
 type ProblemChangedFieldName struct {
 	Message string
 	Number  int32
